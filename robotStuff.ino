@@ -69,12 +69,13 @@ void servoCalc() {
     float legLength = 0;
     float legAngle = 0;
     float tempStore = ((legLocation[i][0] - torsoLocation[0]) * (legLocation[i][0] - torsoLocation[0])) + ((legLocation[i][1] - torsoLocation[1]) * (legLocation[i][1] - torsoLocation[1]));
-    legLength = sqrt((tempStore * tempStore) + ((legLocation[i][2] - torsoLocation[2]) * (legLocation[i][2] - torsoLocation[2]))); //leg extention
-    if (tempStore) legAngle = asin((legLocation[i][1] - torsoLocation[1]) / tempStore); //angle from perpendicular
+    legLength = sqrt((tempStore) + ((legLocation[i][2] - torsoLocation[2]) * (legLocation[i][2] - torsoLocation[2]))); //leg extention
+    tempStore = sqrt(tempStore);
+    if (tempStore != 0) legAngle = asin((legLocation[i][1] - torsoLocation[1]) / tempStore); //angle from perpendicular
     else legAngle = 0;
     Serial.print(i);
     Serial.print(" is at ");
-    Serial.print(legAngle);
+    Serial.print(legAngle * (180 / PI));
     Serial.print("\t");
   }
   Serial.println();
