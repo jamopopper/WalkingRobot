@@ -26,7 +26,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40, Wire1);
 
 //custom math
 float robotDimensions[] = {113.137, 82.25, 82.25, 82.25}; //{coxa joint to adjacent coxa joint length, coxa length, femur length, tibia length} in mm from joint center to joint center
-float legLocation[4][3] = {{ -250, 150, 0}, {250, 150, 0}, { -250, -150, 0}, {250, 150, 0}}; //{leg selected, {foot x, foot y, foot z}} in mm from robot center
+float legLocation[4][3] = {{ -150, 250, 0}, {150, 250, 0}, { -150, -250, 0}, {150, -250, 0}}; //{leg selected, {foot x, foot y, foot z}} in mm from robot center
 float torsoLocation[] = {0, 0, 0}; //{center x, center y, center z} in mm from center of robot on the plane passing through all joints when perpendicular
 float torsoOrientation[] = {0, 0, 0}; //{roll, pitch, yaw} in degrees of offset
 const double servoScale = double(USMAX - USMIN) / 180;
@@ -51,11 +51,6 @@ void setup() {
 void loop() {
   servoCalc();
   //servoSend();
-  if (Serial.available() && Serial.readString() == "STOP") {
-    while(true) {
-      
-    }
-  }
   if (!servoToggle && digitalRead(10)) {
     servoState = !servoState;
   }
@@ -65,17 +60,20 @@ void loop() {
   delay(75);
 }
 void servoCalc() {
+  float jointOffset[4][2] = {{-1, 1}, {1, 1}, {-1, -1}, {1, -1}};
   for (uint_fast8_t i = 0U; i < 4U; i++) {
     float legLength = 0;
     float legAngle = 0;
-    float tempStore = ((legLocation[i][0] - torsoLocation[0]) * (legLocation[i][0] - torsoLocation[0])) + ((legLocation[i][1] - torsoLocation[1]) * (legLocation[i][1] - torsoLocation[1]));
-    legLength = sqrt((tempStore) + ((legLocation[i][2] - torsoLocation[2]) * (legLocation[i][2] - torsoLocation[2]))); //leg extention
-    tempStore = sqrt(tempStore);
-    if (tempStore != 0) legAngle = asin((legLocation[i][1] - torsoLocation[1]) / tempStore); //angle from perpendicular
+    float legHold[2] = {legLocation[i][0] - torsoLocation[0] - (jointOffset[i][0] * robotDimensions[0] / 2), legLocation[i][1] - torsoLocation[1] - (jointOffset[i][1] * robotDimensions[0] / 2)};
+    legHold[0] = ((legHold[0]) * (legHold[0])) + ((legHold[1]) * (legHold[1]));
+    legLength = sqrt((legHold[0]) + ((legLocation[i][2] - torsoLocation[2]) * (legLocation[i][2] - torsoLocation[2]))); //leg extention
+    legHold[1] = sqrt(legHold[0]);
+    if (legHold[0] != 0) legAngle = asin((legLocation[i][1] - torsoLocation[1] - (jointOffset[i][1] * robotDimensions[0] / 2)) / legHold[1]); //angle from perpendicular
     else legAngle = 0;
     Serial.print(i);
     Serial.print(" is at ");
-    Serial.print(legAngle * (180 / PI));
+    if ((i % 2)) Serial.print(90 - (legAngle * (180 / PI)));
+    else Serial.print(90 + (legAngle * (180 / PI)));
     Serial.print("\t");
   }
   Serial.println();
